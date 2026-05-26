@@ -1,11 +1,11 @@
 """
 =============================================================================
-PIPELINE ISB FINAL VERSION - SCRIPT 04: HIGH-FIDELITY VISUAL RENDERING ENGINE
+PIPELINE ISB - SCRIPT 04: HIGH-FIDELITY VISUAL RENDERING ENGINE (ODE-PDE)
 =============================================================================
-Function: Ingests spatiotemporal .npy matrices and multidimensional .csv outputs 
-          to render high-resolution, publication-ready figures.
-          [PATCH: Directory I/O Synchronization enforced for latency mitigation]
-Status: Reproducibility Standard - DETERMINISTIC VISUALIZATION
+Function: Ingests deterministic spatiotemporal .npy matrices and .csv outputs 
+          to render high-resolution, publication-ready analytical figures.
+          Engineered to expose topological phase transitions and structural limits.
+Status: Reproducibility Standard - Deterministic Visualization Engine
 =============================================================================
 """
 
@@ -22,22 +22,31 @@ from matplotlib.colors import LinearSegmentedColormap, Normalize
 import warnings
 warnings.filterwarnings("ignore")
 
-print("[SYSTEM] Initializing High-Fidelity Visual Rendering Engine...")
+print("[SYSTEM] Initializing high-fidelity deterministic visual rendering engine...")
 BASE_DIR = '/content/drive/MyDrive/ISB_Empirical_Vault'
 OUTPUT_DIR = f"{BASE_DIR}/Manuscript_Figures"
 
-# Enforce initial directory synchronization
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Q1 Aesthetics setup
+# Q1 Aesthetics setup with integrated LaTeX formatting
 plt.style.use('seaborn-v0_8-paper')
-sns.set_context("paper", font_scale=1.6)
+sns.set_context("paper", font_scale=1.4)
 sns.set_style("ticks")
+plt.rcParams.update({
+    'font.family': 'serif',
+    'axes.labelsize': 12,
+    'axes.titlesize': 14,
+    'legend.fontsize': 10,
+    'figure.dpi': 300,
+    'axes.grid': True,
+    'grid.alpha': 0.3,
+    'grid.linestyle': '--'
+})
 
 # ---------------------------------------------------------
 # [FIGURE 1] FOCAL NETWORK DYNAMICS & ASTROCYTIC COUPLING 
 # ---------------------------------------------------------
-print("\n-> Synthesizing Figure 1: Focal Network Dynamics...")
+print("\n[MODULE 1] Synthesizing Figure 1: Focal network dynamics...")
 try:
     ATP_data = np.load(f"{BASE_DIR}/Output_ATP_Spatiotemporal_AFR_Age60.npy")
     G_data = np.load(f"{BASE_DIR}/Output_G_Spatiotemporal_AFR_Age60.npy")
@@ -51,81 +60,82 @@ try:
     Global_Mean_G = np.mean(G_data, axis=0)
     
     fig1 = plt.figure(figsize=(14, 10))
-    gs = fig1.add_gridspec(2, 2, height_ratios=[2, 1], hspace=0.3)
+    gs = fig1.add_gridspec(2, 2, height_ratios=[2, 1], hspace=0.35)
     
-    # [Panel 1A]
+    # [Panel 1A] - Deterministic Trajectory Mapping
     ax1 = fig1.add_subplot(gs[0, 0])
-    ax1.plot(t_eval, ATP_data[0, :], color='#d62728', linewidth=3, label='Epicenter (Node 0 - NTS/Insula)')
-    ax1.plot(t_eval, ATP_data[147, :], color='#9467bd', linewidth=2, linestyle='--', label='Distant Node (Node 147 - PFC)')
-    ax1.plot(t_eval, Global_Mean_ATP, color='#1f77b4', linewidth=3, label='Global Brain Mean ATP')
-    ax1.axhline(y=collapse_thresh, color='black', linestyle=':', linewidth=2)
+    ax1.plot(t_eval, ATP_data[0, :], color='#8c1515', linewidth=3, label=r'Epicenter Node ($\eta_0$)')
+    ax1.plot(t_eval, ATP_data[147, :], color='#9467bd', linewidth=1.5, linestyle='--', label=r'Distant Node ($\eta_{147}$)')
+    ax1.plot(t_eval, Global_Mean_ATP, color='#1f77b4', linewidth=3, label=r'Global Brain $\mu_{ATP}$')
+    ax1.axhline(y=collapse_thresh, color='black', linestyle=':', linewidth=2, label=r'Bifurcation Threshold ($\theta_c = 0.5$)')
     
     collapse_indices = np.where(ATP_data[0, :] <= collapse_thresh)[0]
+    
+    # [VISUAL PATCH] Implementing Bounding Boxes and Safe Coordinate Thresholds
+    bbox_style = dict(boxstyle="round,pad=0.4", fc="white", ec="black", alpha=0.85)
+    
     if len(collapse_indices) > 0:
         collapse_day = t_eval[collapse_indices[0]]
+        safe_x = max(50, collapse_day - 250)
         ax1.annotate(f'Saddle-Node Bifurcation\n(Day {collapse_day:.0f})', 
-                     xy=(collapse_day, collapse_thresh), xytext=(collapse_day-200, 1.0),
-                     arrowprops=dict(facecolor='black', shrink=0.05, width=1))
+                     xy=(collapse_day, collapse_thresh), 
+                     xytext=(safe_x, 1.2),
+                     bbox=bbox_style,
+                     arrowprops=dict(arrowstyle="->", color='black', lw=1.5, connectionstyle="arc3,rad=-0.1"))
     else:
         min_atp_idx = np.argmin(ATP_data[0, :])
         min_atp_day = t_eval[min_atp_idx]
         min_atp_val = ATP_data[0, min_atp_idx]
-        # PATCH APPLIED: Push annotation to the right (+150) to avoid axis overlap
-        ax1.annotate(f'Lower-Energy Equilibrium\n({min_atp_val:.2f} mM)', 
+        safe_x = max(50, min_atp_day - 350)
+        ax1.annotate(f'Stable Attractor Equilibrium\n({min_atp_val:.2f} mM)', 
                      xy=(min_atp_day, min_atp_val), 
-                     xytext=(min_atp_day + 150, min_atp_val + 0.5),
-                     arrowprops=dict(facecolor='black', shrink=0.05, width=1))
+                     xytext=(safe_x, min_atp_val + 0.8),
+                     bbox=bbox_style,
+                     arrowprops=dict(arrowstyle="->", color='black', lw=1.5, connectionstyle="arc3,rad=0.1"))
     
-    ax1.set_ylabel('ATP Concentration (mM)', fontweight='bold')
+    ax1.set_ylabel(r'$[ATP]_{astrocytic} \ (mM)$', fontweight='bold')
+    ax1.set_xlabel(r'$t \ (Days)$', fontweight='bold')
     ax1.set_title('A. Bioenergetic Depletion: Focal vs Systemic Lag', fontweight='bold')
-    ax1.legend(loc='upper right', fontsize=10)
-    ax1.grid(True, linestyle='-', alpha=0.3)
+    ax1.legend(loc='upper right', framealpha=0.9)
     ax1.set_ylim(0, 3.5)
 
-    # [Panel 1B]
+    # [Panel 1B] - Glutamate Core Dynamics
     ax2 = fig1.add_subplot(gs[0, 1])
-    ax2.plot(t_eval, G_data[0, :], color='#d62728', linewidth=3, label='Glu (Epicenter)')
-    ax2.plot(t_eval, Global_Mean_G, color='#1f77b4', linewidth=2, linestyle='-', label='Glu (Mean)')
+    ax2.plot(t_eval, G_data[0, :], color='#d62728', linewidth=3, label=r'Epicenter $[Glu]_{syn}$')
+    ax2.plot(t_eval, Global_Mean_G, color='#1f77b4', linewidth=2, linestyle='-', label=r'Global Mean $\mu_{Glu}$')
     
-    ax2.axhline(y=1.5, color='orange', linestyle=':', label='Magistretti Stoichiometric Boundary (>1.5 mM)')
-    ax2.fill_between(t_eval, 1.5, G_data[0, :], where=(G_data[0, :] > 1.5), color='orange', alpha=0.1)
-    
-    ax2.set_ylabel('Glutamate (mM)', fontweight='bold')
+    ax2.set_ylabel(r'$[Glu]_{synaptic} \ (mM)$', fontweight='bold')
+    ax2.set_xlabel(r'$t \ (Days)$', fontweight='bold')
     ax2.set_title('B. Vagal Influx & Astrocytic EAAT Bottleneck', fontweight='bold')
-    ax2.legend(loc='upper left', fontsize=10)
-    ax2.grid(True, linestyle='-', alpha=0.3)
+    ax2.legend(loc='upper left', framealpha=0.9)
 
-    # [Panel 1C]
+    # [Panel 1C] - Resilience Scatter Matrix
     df_sim = pd.read_csv(f"{BASE_DIR}/Output_TrueDynamic_MegaSimulation_Final.csv")
     failed_patients = df_sim[df_sim['Survived_1000_Days'] == False]
     
     ax3 = fig1.add_subplot(gs[1, :])
-    sns.scatterplot(data=failed_patients, x='Time_To_Collapse_Days', y='Stabilized_ISB_Score', 
-                    hue='Ancestry', palette='Set1', s=50, alpha=0.6, edgecolor=None, ax=ax3)
+    sns.scatterplot(data=failed_patients, x='Time_To_Bifurcation_Days', y='Stabilized_ISB_Score', 
+                    hue='Ancestry', palette='Set1', s=50, alpha=0.7, edgecolor='black', ax=ax3)
     
-    ax3.set_xlabel('Time-to-Phase-Transition (Biological Days)', fontweight='bold')
-    ax3.set_ylabel('Basal ISB Score (Resilience Metric)', fontweight='bold')
+    ax3.set_xlabel(r'Time-to-Phase-Transition $t_c$ (Biological Days)', fontweight='bold')
+    ax3.set_ylabel(r'Basal ISB Score $\Omega_{basal}$', fontweight='bold')
     ax3.set_title('C. Correlation: Bioenergetic Resilience vs Phase Transition Acceleration', fontweight='bold')
-    ax3.grid(True, linestyle='-', alpha=0.3)
     
-    plt.suptitle('Figure 1: Multiscale Dynamics of Connectome-Mediated Bioenergetic Failure', fontweight='bold', fontsize=20, y=1.02)
+    plt.suptitle('Figure 1: Multiscale Dynamics of Connectome-Mediated Bioenergetic Failure', fontweight='bold', fontsize=18, y=1.02)
     fig1.tight_layout()
     
-    # I/O Synchronization validation (Explicit Call)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    target_path = os.path.join(OUTPUT_DIR, "Figure_1_Complexity.png")
-    plt.savefig(target_path, dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, "Figure_1_Complexity.png"), dpi=300, bbox_inches='tight')
     plt.close(fig1)
-    print("   [SUCCESS] Figure 1 archived.")
+    print("   -> [VALIDATED] Figure 1 archived.")
 except Exception as e:
     import traceback
-    print(f"   [FATAL ERROR] Figure 1 generation failed: {e}")
+    print(f"   -> [PIPELINE ERROR] Figure 1 rendering failed: {e}")
     traceback.print_exc()
 
 # ---------------------------------------------------------
 # [FIGURE 2] PAN-ANCESTRY SPATIOTEMPORAL CONNECTOME MAP
 # ---------------------------------------------------------
-print("\n-> Synthesizing Figure 2: Pan-Ancestry Spatiotemporal Map...")
+print("\n[MODULE 2] Synthesizing Figure 2: Pan-ancestry map connectome...")
 try:
     destrieux = datasets.fetch_atlas_destrieux_2009()
     atlas_img = load_img(destrieux['maps'])
@@ -145,7 +155,7 @@ try:
     gs = fig2.add_gridspec(2, 2, wspace=0.1, hspace=0.3)
     
     cmap_atp = LinearSegmentedColormap.from_list('atp_map', ['#d62728', '#ff7f0e', '#1f77b4']) 
-    norm = Normalize(vmin=2.6, vmax=3.0)
+    norm = Normalize(vmin=0.0, vmax=3.0)
     
     node_sizes = [250 if i == 0 else 40 for i in range(len(coords))]
     
@@ -170,81 +180,68 @@ try:
             colorbar=False, axes=ax, title='' 
         )
         
-        ax.set_title(f'{title}\nBiological Day 1000', fontsize=18, fontweight='bold', pad=20)
+        ax.set_title(f'{title}\nBiological Day 1000', fontsize=16, fontweight='bold', pad=20)
         print(f"     -> Topographical mapping resolved for {title[:3]}")
 
-    plt.suptitle('Figure 2: Pan-Ancestry Map of Focal Bioenergetic Depletion', fontweight='bold', fontsize=26, y=1.05)
+    plt.suptitle(r'Figure 2: Topological Heatmap of Focal Bioenergetic Depletion ($t=1000$)', fontweight='bold', fontsize=22, y=1.05)
     
-    # I/O Synchronization validation
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    target_path = os.path.join(OUTPUT_DIR, "Figure_2_Network_Comparison.png")
-    plt.savefig(target_path, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.savefig(os.path.join(OUTPUT_DIR, "Figure_2_Network_Comparison.png"), dpi=300, bbox_inches='tight', facecolor='white')
     plt.close(fig2)
-    print("   [SUCCESS] Figure 2 archived.")
+    print("   -> [VALIDATED] Figure 2 archived.")
 except Exception as e:
     import traceback
-    print(f"   [FATAL ERROR] Figure 2 generation failed: {e}")
+    print(f"   -> [PIPELINE ERROR] Figure 2 rendering failed: {e}")
     traceback.print_exc()
 
 # ---------------------------------------------------------
 # [FIGURE 3 & 4] KAPLAN-MEIER ESTIMATE & THERMODYNAMIC CONTOUR
 # ---------------------------------------------------------
-print("\n-> Synthesizing Figures 3 & 4: Survival & Thermodynamic Density Map...")
+print("\n[MODULE 3] Synthesizing Figures 3 & 4: Survival and heatmap contours...")
 try:
     df_sim = pd.read_csv(f"{BASE_DIR}/Output_TrueDynamic_MegaSimulation_Final.csv")
-    
-    # Universal Filtering Boundary
     extreme_load = df_sim[df_sim['Allostatic_Load_OR'] > 3.0]
     
-    # FIGURE 3
+    # FIGURE 3 - Kaplan Meier
     fig3, ax3 = plt.subplots(figsize=(10, 6))
     colors = {'AFR': '#d62728', 'AMR': '#ff7f0e', 'EAS': '#2ca02c', 'EUR': '#1f77b4'}
     for ancestry in ['AFR', 'AMR', 'EAS', 'EUR']:
         subset = extreme_load[extreme_load['Ancestry'] == ancestry]
-        times = np.sort(subset['Time_To_Collapse_Days'].values)
+        times = np.sort(subset['Time_To_Bifurcation_Days'].values)
         survival_prob = 1.0 - np.arange(1, len(times) + 1) / len(times)
         times = np.insert(times, 0, 0)
         survival_prob = np.insert(survival_prob, 0, 1.0)
         ax3.step(times, survival_prob * 100, where='post', label=ancestry, color=colors[ancestry], linewidth=2.5)
         
     ax3.set_xlim(0, 1000)
-    ax3.set_ylim(90, 101) 
-    ax3.set_xlabel('Biological Days', fontweight='bold')
-    ax3.set_ylabel('Systemic Bioenergetic Integrity Probability (%)', fontweight='bold')
-    ax3.set_title('Figure 3: Kaplan-Meier Estimate Under High Allostatic Load (OR > 3.0)', fontweight='bold', pad=15)
+    ax3.set_ylim(-5, 105) 
+    ax3.set_xlabel(r'Biological Days ($t$)', fontweight='bold')
+    ax3.set_ylabel(r'Systemic Bioenergetic Integrity Probability $P(\theta > 0.5) \ (\%)$', fontweight='bold')
+    ax3.set_title(r'Figure 3: Kaplan-Meier Survival Estimate Under $OR > 3.0$', fontweight='bold', pad=15)
     ax3.legend(title='Ancestry', loc='lower left')
-    ax3.grid(True, linestyle='--', alpha=0.6)
     fig3.tight_layout()
     
-    # I/O Synchronization validation
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    target_path = os.path.join(OUTPUT_DIR, "Figure_3_Kaplan_Meier.png")
-    plt.savefig(target_path, dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, "Figure_3_Kaplan_Meier.png"), dpi=300, bbox_inches='tight')
     plt.close(fig3)
     
-    # FIGURE 4
+    # FIGURE 4 - Thermodynamic Contour
     fig4, ax4 = plt.subplots(figsize=(10, 8))
     collapsed_patients = df_sim[df_sim['Survived_1000_Days'] == False]
     
-    # Nomenclature Elevation: Visceral -> Cumulative
-    sns.kdeplot(data=collapsed_patients, x='Age', y='Allostatic_Load_OR', fill=True, cmap="YlOrRd", thresh=0.05, levels=10, ax=ax4, alpha=0.8)
-    sns.scatterplot(data=collapsed_patients, x='Age', y='Allostatic_Load_OR', color='black', s=15, alpha=0.5, marker='x', ax=ax4)
+    sns.kdeplot(data=collapsed_patients, x='Age', y='Allostatic_Load_OR', fill=True, cmap="mako", thresh=0.05, levels=12, ax=ax4, alpha=0.9)
+    sns.scatterplot(data=collapsed_patients, x='Age', y='Allostatic_Load_OR', color='white', s=20, alpha=0.6, marker='x', ax=ax4)
     ax4.set_xlim(20, 80)
     ax4.set_ylim(1.0, 4.0)
-    ax4.set_xlabel('Senescence Entropy (Age in Years)', fontweight='bold')
-    ax4.set_ylabel('Cumulative Allostatic Load (Odds Ratio)', fontweight='bold')
-    ax4.set_title('Figure 4: Vulnerability Density Map (Bifurcation Zone)', fontweight='bold', pad=15)
+    ax4.set_xlabel(r'Senescence Entropy $\Delta S_{mito}$ (Age in Years)', fontweight='bold')
+    ax4.set_ylabel(r'Cumulative Allostatic Load ($\Omega_{ext}$ / Odds Ratio)', fontweight='bold')
+    ax4.set_title(r'Figure 4: Thermodynamic Vulnerability Contour (Bifurcation Zone Density)', fontweight='bold', pad=15)
     fig4.tight_layout()
     
-    # I/O Synchronization validation
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    target_path = os.path.join(OUTPUT_DIR, "Figure_4_Thermodynamic_Heatmap.png")
-    plt.savefig(target_path, dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(OUTPUT_DIR, "Figure_4_Thermodynamic_Heatmap.png"), dpi=300, bbox_inches='tight')
     plt.close(fig4)
-    print("   [SUCCESS] Figures 3 & 4 archived.")
+    print("   -> [VALIDATED] Figures 3 & 4 archived.")
 except Exception as e:
     import traceback
-    print(f"   [FATAL ERROR] Figures 3 or 4 generation failed: {e}")
+    print(f"   -> [PIPELINE ERROR] Figures 3 or 4 rendering failed: {e}")
     traceback.print_exc()
 
 print("\n=============================================================================")
